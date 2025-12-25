@@ -1,12 +1,9 @@
-const express = require('express');
-const router = express.Router();
+import { Router } from 'express';
 
-/**
- * GET /health
- * Endpoint de vérification de l’état du serveur
- */
+const router = Router();
+
 router.get('/', (req, res) => {
   res.status(200).json({ status: 'ok' });
 });
 
-module.exports = router;
+export default router;

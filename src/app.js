@@ -1,11 +1,13 @@
-
-const express = require('express');
-const healthRoutes = require('./routes/health.routes');
+import express from 'express';
+import healthRoutes from './routes/health.routes.js';
+import logger from './middlewares/requestLogger.js';
 
 const app = express();
 
-// Middleware pour parser le JSON
 app.use(express.json());
+
+// Routes
+app.use(logger);
 app.use('/health', healthRoutes);
 
-module.exports = app;
+export default app;
