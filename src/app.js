@@ -1,6 +1,7 @@
 import express from 'express';
 import healthRoutes from './routes/health.routes.js';
 import logger from './middlewares/requestLogger.js';
+import 'dotenv/config';
 
 const app = express();
 
