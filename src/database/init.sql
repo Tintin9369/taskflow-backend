@@ -12,7 +12,7 @@ CREATE TABLE tasks (
     description TEXT,
     is_done BOOLEAN DEFAULT FALSE,
     creator_id INT NOT NULL,
-    FOREIGN KEY (creator_id) REFERENCES User(id),
+
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
@@ -22,10 +22,12 @@ CREATE TABLE tasks (
         ON DELETE CASCADE
 );
 
+
 CREATE TABLE task_users (
     user_id INT NOT NULL,
     task_id INT NOT NULL,
     role ENUM('participant', 'admin') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     PRIMARY KEY(user_id, task_id),
     
@@ -37,6 +39,5 @@ CREATE TABLE task_users (
     CONSTRAINT fk_task_users_task
         FOREIGN KEY (task_id)
         REFERENCES tasks(id)
-        ON DELETE CASCADE
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ON DELETE CASCADE    
 );
