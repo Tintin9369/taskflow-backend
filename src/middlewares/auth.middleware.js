@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 
 
+
+
+
 export function auth(req, res, next) {
   const header = req.headers["authorization"];
   const string_format = "Bearer ";
@@ -10,7 +13,8 @@ export function auth(req, res, next) {
     return;
   }
 
-  console.log("le header est au bon format");
+  console.log("JWT_SECRET = ", process.env.JWT_SECRET);
+  
   const token = header.split(" ")[1];
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
