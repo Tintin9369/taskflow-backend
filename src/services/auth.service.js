@@ -10,16 +10,25 @@ export async function verifyUserCredentials(email, password) {
     [email],
   );
 
+  console.log("Email reçu: ", email);
+  console.log("password reçu: ", password);
+  console.log("User trouvé: ", rows);
+  
+  
+
   if (rows.length === 0) {
-    throw new Error("Invalid credentials");
+    throw new Error("User not found");
   }
 
   const user = rows[0];
 
+  console.log("Password en clair: ", password);
+  console.log("Hash BDD: ", user.password_hash);
+  
   const isPasswordValid = await bcrypt.compare(password, user.password_hash);
 
   if(!isPasswordValid) {
-    throw new Error("Invalid Credentials");
+    throw new Error("Invalid password");
   }
 
   return {
