@@ -26,7 +26,7 @@ async function seed() {
         VALUES (?, ?, ?)`,
     [3, "user@test.com", hash2],
   );
-
+// ////////////////////////////////////////////////////
   await db.execute(
     `INSERT INTO tasks (id, title, is_done, creator_id)
         VALUES(?, ?, ?, ?)`,
@@ -42,7 +42,11 @@ async function seed() {
         VALUES(?, ?, ?, ?)`,
     [3, "creer une maquette Figma", true, 1]);
 
-
+    await db.execute(
+    `INSERT INTO tasks (id, title, is_done, creator_id)
+        VALUES(?, ?, ?, ?)`,
+    [4, "faire un point projet avec le client", true, 3]);
+// ////////////////////////////////////////////////////
   await db.execute(
     `INSERT INTO task_users (user_id, task_id, role)
 VALUES(?, ?, ?)`,
@@ -62,6 +66,16 @@ VALUES(?, ?, ?)`,
     `INSERT INTO task_users (user_id, task_id, role)
 VALUES(?, ?, ?)`,
     [1, 3, "admin"]);
+
+    await db.execute(
+    `INSERT INTO task_users (user_id, task_id, role)
+VALUES(?, ?, ?)`,
+    [3, 4, "admin"]);
+
+    await db.execute(
+    `INSERT INTO task_users (user_id, task_id, role)
+VALUES(?, ?, ?)`,
+    [2, 4, "participant"]);
 
   console.log("Seed terminé ✅");
   process.exit();

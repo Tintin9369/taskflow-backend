@@ -9,3 +9,14 @@ export async function getAllTasksService() {
     );
     return rows;
 }
+
+export async function getParticipantsByTaskIdService(taskId) {
+    const [participants] = await db.execute(`
+        SELECT users.id, users.email, task_users.role
+        FROM task_users 
+        INNER JOIN users ON task_users.user_id = users.id
+        WHERE task_users.task_id = ?`,
+        [taskId]
+    );
+    return participants;
+}
