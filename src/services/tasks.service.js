@@ -144,6 +144,10 @@ export async function deleteTaskById(userId, taskId) {
     throw new Error("INVALID TASK ID");
   }
 
+  if (!userId || !taskId) {
+    throw new Error("INVALID INPUT");
+  }
+
   const connection = await db.getConnection();
 
   try {
@@ -189,6 +193,185 @@ export async function deleteTaskById(userId, taskId) {
     );
     await connection.commit();
     return { taskId };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+//////////// AJOUTER UN PARTICIPANT A UNE TASK  ////////
+export async function addParticipantToTask(adminId, taskId, userId) {
+  if (!adminId || !userId || !taskId) {
+    throw new Error("INVALID INPUT");
+  }
+
+  if (isNaN(taskId) || isNaN(userId)) {
+    throw new Error("INVALID INPUT");
+  }
+
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // Vérifier que la Task existe
+    const [taskExists] = await connection.execute(
+      `
+      SELECT id
+      FROM tasks
+      WHERE id = ?
+      `,
+      [taskId],
+    );
+
+    if (taskExists.length === 0) {
+      throw new Error("TASK NOT FOUND");
+    }
+
+    // Vérifier que l'adminId est admin de la Task
+    const [adminRows] = await connection.execute(
+      `
+      SELECT role
+      FROM task_users
+      WHERE user_id = ?
+      AND task_id = ?
+      AND role = 'admin'
+      `,
+      [adminId, taskId],
+    );
+
+    if (adminRows.length === 0) {
+      throw new Error("FORBIDDEN");
+    }
+
+    // Vérifier que l'utilisateur existe
+    const [userExists] = await connection.execute(
+      `
+      SELECT id
+      FROM users
+      WHERE id = ?
+      `,
+      [userId],
+    );
+
+    if (userExists.length === 0) {
+      throw new Error("USER NOT FOUND");
+    }
+
+    // Vérifier si déjà participant
+    const [alreadyParticipant] = await connection.execute(
+      `
+      SELECT 1
+      FROM task_users
+      WHERE user_id = ?
+      AND task_id = ?
+      LIMIT 1
+      `,
+      [userId, taskId],
+    );
+
+    if (alreadyParticipant.length > 0) {
+      throw new Error("ALREADY PARTICIPANT");
+    }
+
+    // Ajouter le participant
+    await connection.execute(
+      `
+      INSERT INTO task_users (user_id, task_id, role)
+      VALUES(?, ?, 'participant')
+      `,
+      [userId, taskId],
+    );
+
+    await connection.commit();
+
+    return { taskId: Number(taskId), userId: Number(userId), role: "participant" };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+//////////// RETIRER UN PARTICIPANT D'UNE TASK  ////////
+export async function removeParticipantFromTask(adminId, taskId, userId) {
+  if (!adminId || !userId || !taskId) {
+    throw new Error("INVALID INPUT");
+  }
+
+  if (isNaN(taskId) || isNaN(userId)) {
+    throw new Error("INVALID INPUT");
+  }
+
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // Vérifier que la Task existe
+    const [taskExists] = await connection.execute(
+      `
+      SELECT id
+      FROM tasks
+      WHERE id = ?
+      `,
+      [taskId],
+    );
+
+    if (taskExists.length === 0) {
+      throw new Error("TASK NOT FOUND");
+    }
+
+    // Vérifier que l'adminId est admin de la Task
+    const [adminRows] = await connection.execute(
+      `
+      SELECT role
+      FROM task_users
+      WHERE user_id = ?
+      AND task_id = ?
+      AND role = 'admin'
+      `,
+      [adminId, taskId],
+    );
+
+    if (adminRows.length === 0) {
+      throw new Error("FORBIDDEN");
+    }
+
+    // Vérifier que l'utilisateur est participant
+    const [participantRows] = await connection.execute(
+      `
+      SELECT role
+      FROM task_users
+      WHERE user_id = ?
+      AND task_id = ?
+      LIMIT 1
+      `,
+      [userId, taskId],
+    );
+
+    if (participantRows.length === 0) {
+      throw new Error("NOT PARTICIPANT");
+    }
+
+    if (participantRows[0].role === "admin") {
+      throw new Error("CANNOT REMOVE ADMIN");
+    }
+
+    await connection.execute(
+      `
+      DELETE FROM task_users
+      WHERE user_id = ?
+      AND task_id = ?
+      `,
+      [userId, taskId],
+    );
+
+    await connection.commit();
+    return { taskId: Number(taskId), userId: Number(userId) };
   } catch (error) {
     await connection.rollback();
     throw error;

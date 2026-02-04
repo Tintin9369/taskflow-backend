@@ -3,6 +3,8 @@ import { getParticipantsByTaskIdService } from "../services/tasks.service.js";
 import { createTaskService } from "../services/tasks.service.js";
 import { updateTaskById } from "../services/tasks.service.js";
 import { deleteTaskById } from "../services/tasks.service.js";
+import { addParticipantToTask } from "../services/tasks.service.js";
+import { removeParticipantFromTask } from "../services/tasks.service.js";
 
 ///////  LISTER TOUTES LES TASKS EN COURS  /////////////
 export async function getAllTasks(req, res) {
@@ -78,7 +80,7 @@ export async function updateTask(req, res) {
 
 //////////// SUPPRESSION D'UNE TASK PAR ID  ////////
 export async function deleteTask(req, res) {
-  const { userId } = req.user.id;
+  const { id: userId } = req.user;
   const { taskId } = req.params;
 
   console.log("REQ.PARAMS =", req.params);
@@ -90,8 +92,11 @@ export async function deleteTask(req, res) {
   try {
     await deleteTaskById(userId, taskId);
 
-    return res.status(200).json({ message: "Task supprimée :" });
+    return res.status(200).json({ message: "Task supprimée" });
   } catch (error) {
+    if (error.message === "INVALID INPUT") {
+      return res.status(400).json({ message: "Invalid input"});
+    }
     if (error.message === "TASK NOT FOUND") {
       return res.status(404).json({ message: "Task not found" });
     }
@@ -100,6 +105,69 @@ export async function deleteTask(req, res) {
     }
     if (error.message === "INVALID TASK ID") {
       return res.status(400).json({ message: "Invalid TaskId" });
+    }
+    console.error(error);
+    res.status(500).json({ message: "Failed request" });
+  }
+}
+
+//////////// AJOUTER UN PARTICIPANT A UNE TASK  ////////
+export async function addParticipant(req, res) {
+  const { id: adminId } = req.user;
+  const { taskId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ message: "Missing userId" });
+  }
+
+  try {
+    const participant = await addParticipantToTask(adminId, taskId, userId);
+    return res.status(201).json(participant);
+  } catch (error) {
+    if (error.message === "INVALID INPUT") {
+      return res.status(400).json({ message: "Invalid input" });
+    }
+    if (error.message === "TASK NOT FOUND") {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    if (error.message === "USER NOT FOUND") {
+      return res.status(404).json({ message: "User not found" });
+    }
+    if (error.message === "FORBIDDEN") {
+      return res.status(403).json({ message: "Pas Admin: Forbidden" });
+    }
+    if (error.message === "ALREADY PARTICIPANT") {
+      return res.status(409).json({ message: "Already participant" });
+    }
+    console.error(error);
+    res.status(500).json({ message: "Failed request" });
+  }
+}
+
+//////////// RETIRER UN PARTICIPANT D'UNE TASK  ////////
+export async function removeParticipant(req, res) {
+  const { id: adminId } = req.user;
+  const { taskId, userId } = req.params;
+
+  try {
+    await removeParticipantFromTask(adminId, taskId, userId);
+    return res.status(200).json({ message: "Participant retiré" });
+  } catch (error) {
+    if (error.message === "INVALID INPUT") {
+      return res.status(400).json({ message: "Invalid input" });
+    }
+    if (error.message === "TASK NOT FOUND") {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    if (error.message === "FORBIDDEN") {
+      return res.status(403).json({ message: "Pas Admin: Forbidden" });
+    }
+    if (error.message === "NOT PARTICIPANT") {
+      return res.status(404).json({ message: "User not participant" });
+    }
+    if (error.message === "CANNOT REMOVE ADMIN") {
+      return res.status(403).json({ message: "Cannot remove admin" });
     }
     console.error(error);
     res.status(500).json({ message: "Failed request" });
